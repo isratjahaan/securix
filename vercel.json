@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "buildCommand": null,
+  "outputDirectory": "docs",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/mobile", "destination": "/mobile.html" },
+    { "source": "/m", "destination": "/mobile.html" },
+    { "source": "/download-apk", "destination": "/securix-debug.apk" }
+  ]
+}
