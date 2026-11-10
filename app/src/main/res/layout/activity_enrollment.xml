@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/secondary_black"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DEVICE OWNER ENROLLMENT"
+            android:textColor="@color/accent_cyan"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Device Owner is the highest privilege level on Android Enterprise. It gives SECURIX the ability to block uninstallation, disable factory resets, enforce kiosk lockdowns, and disallow safe mode."
+            android:textColor="@color/text_muted"
+            android:textSize="13sp" />
+
+        <!-- Method 1: ADB Command -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/card_navy"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="METHOD 1: ADB ENROLLMENT"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="1. Remove all Google and user accounts from Android Settings -> Accounts.\n2. Enable USB Debugging in Developer Options.\n3. Connect phone to computer and run:"
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvAdbCommand"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="#0A101D"
+                    android:padding="12dp"
+                    android:text="adb shell dpm set-device-owner com.securix.security/.receiver.SecurixDeviceAdminReceiver"
+                    android:textColor="@color/accent_cyan"
+                    android:textSize="11sp"
+                    android:typeface="monospace" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCopyAdb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Copy ADB Command"
+                    android:textColor="@color/secondary_black"
+                    app:backgroundTint="@color/primary_emerald"
+                    app:cornerRadius="8dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Method 2: QR Code Factory Setup -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/card_navy"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="METHOD 2: ZERO-TOUCH / QR CODE PROVISIONING"
+                    android:textColor="@color/primary_emerald"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="On a freshly factory-reset phone, tap the initial 'Welcome' screen 6 times to open the enterprise QR scanner. Scan your SECURIX QR code from the web dashboard to auto-enroll without computer cables."
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Comparison Table Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/card_navy"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CAPABILITY COMPARISON"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="• Remote Screen Lock: Mode A &amp; Mode B\n• Intruder Selfie Snapshot: Mode A &amp; Mode B\n• Loud Siren Alarm &amp; GPS Track: Mode A &amp; Mode B\n• Anti-Uninstall Lock: Mode B (Hardlock) / Mode A (Watchdog)\n• Block Factory Reset: Mode B Only\n• Disallow Safe Boot: Mode B Only"
+                    android:textColor="@color/text_muted"
+                    android:textSize="12sp"
+                    android:lineSpacingExtra="4dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">SECURIX</string>
+    <string name="tagline">Lock. Locate. Protect.</string>
+    <string name="subtitle">Advanced Anti-Theft &amp; Remote Security</string>
+    
+    <string name="status_protected">DEVICE PROTECTED</string>
+    <string name="status_armed">ANTI-THEFT ARMED</string>
+    <string name="status_alarm">ALARM TRIGGERED</string>
+    <string name="status_lost">LOST MODE ACTIVE</string>
+    
+    <string name="mode_standard">MODE A: STANDARD APK</string>
+    <string name="mode_device_owner">MODE B: ENTERPRISE DEVICE OWNER</string>
+    
+    <string name="btn_lock_device">Emergency Lock</string>
+    <string name="btn_sound_alarm">Siren Alarm</string>
+    <string name="btn_locate">Locate GPS</string>
+    <string name="btn_capture_photo">Intruder Snap</string>
+    <string name="btn_fake_power">Fake Power-Off</string>
+    
+    <string name="pref_anti_theft_armed">Armed Anti-Theft System</string>
+    <string name="pref_anti_power_off">Anti-Power-Off Protection</string>
+    <string name="pref_pocket_snatch">Pocket Snatch &amp; Motion Sensor</string>
+    <string name="pref_sim_guard">SIM Swap Guard</string>
+    <string name="pref_intruder_selfie">Break-in Intruder Selfie</string>
+    
+    <string name="device_admin_description">Securix Device Administrator allows remote lock, failed unlock attempts monitoring, and anti-theft wipe.</string>
+    <string name="accessibility_service_description">Securix Accessibility Watchdog intercepts unauthorized power-off and app uninstallation attempts while device is armed.</string>
+</resources>

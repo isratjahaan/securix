@@ -1,0 +1,16 @@
+# Gradle & Android Build Artifacts
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+.vscode/
+
+# Node
+node_modules/
+npm-debug.log
+
+# OS
+Thumbs.db
+.DS_Store

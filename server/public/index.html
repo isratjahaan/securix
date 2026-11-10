@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECURIX — Advanced Anti-Theft & Remote Security Command Center</title>
+    <link rel="stylesheet" href="/public/styles.css">
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Top Cyberpunk Navigation Header -->
+        <header class="cyber-header">
+            <div class="header-branding">
+                <img src="/public/securix_logo.jpg" alt="SECURIX Logo" class="brand-shield-logo">
+                <div class="brand-titles">
+                    <div class="brand-logo-text">SECURIX</div>
+                    <div class="brand-tagline">LOCK • LOCATE • PROTECT</div>
+                </div>
+            </div>
+
+            <div class="header-status-cluster">
+                <div class="status-indicator">
+                    <span class="pulsing-emerald-dot"></span>
+                    <span class="status-label">ENCRYPTION ENGINE ONLINE</span>
+                </div>
+                <a href="/mobile" class="btn-download-apk" style="background:var(--card-navy); color:var(--accent-cyan); border:1px solid var(--accent-cyan); box-shadow:none;">
+                    📱 Mobile View
+                </a>
+                <a href="/download-apk" class="btn-download-apk" download>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download Debug APK (v1.0.0)
+                </a>
+            </div>
+        </header>
+
+        <!-- Metric KPI Banner -->
+        <div class="metrics-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">FLEET STATUS</div>
+                <div class="kpi-value emerald-glow" id="kpiFleetStatus">ARMED & PROTECTED</div>
+                <div class="kpi-sub">AES-256 Command Signing Active</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">REGISTERED TARGET</div>
+                <div class="kpi-value cyan-glow" id="kpiDeviceName">Google Pixel 8 Pro</div>
+                <div class="kpi-sub" id="kpiDeviceId">ID: SEC-ALPHA-01</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">POWER & NETWORK</div>
+                <div class="kpi-value" id="kpiBattery">88% ⚡ Charging</div>
+                <div class="kpi-sub" id="kpiNetwork">5G ENCRYPTED MESH</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">PROTECTION PROFILE</div>
+                <div class="kpi-value emerald-glow" id="kpiMode">MODE B: DEVICE OWNER</div>
+                <div class="kpi-sub">Anti-Reset & Anti-Uninstall Enforced</div>
+            </div>
+        </div>
+
+        <!-- Main Cockpit Grid -->
+        <main class="cockpit-grid">
+            <!-- Left Panel: Live GPS Map & Remote Dispatch Console -->
+            <section class="cockpit-column left-column">
+                <!-- Live GPS Tracking Section -->
+                <div class="cyber-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span class="title-glyph">◉</span> LIVE GEOSPATIAL RADAR
+                        </div>
+                        <div class="gps-readout" id="gpsReadout">
+                            LAT: 37.774900 • LNG: -122.419400 (Acc: 4.2m)
+                        </div>
+                    </div>
+                    <div class="map-container" id="map"></div>
+                </div>
+
+                <!-- Remote Action Command Center -->
+                <div class="cyber-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span class="title-glyph">⚡</span> REMOTE ANTI-THEFT DISPATCH CONSOLE
+                        </div>
+                        <div class="panel-subtitle">Authenticated Remote Commands</div>
+                    </div>
+
+                    <div class="command-actions-grid">
+                        <button class="action-btn btn-lock" onclick="dispatchCommand('LOCK')">
+                            <div class="btn-icon">🔒</div>
+                            <div class="btn-meta">
+                                <span class="btn-label">Remote Lock</span>
+                                <span class="btn-desc">DPM lockNow()</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-alarm" onclick="dispatchCommand('ALARM')">
+                            <div class="btn-icon">🚨</div>
+                            <div class="btn-meta">
+                                <span class="btn-label">Max Siren Alarm</span>
+                                <span class="btn-desc">Bypass Silent + Strobe</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-stop-alarm" onclick="dispatchCommand('STOP_ALARM')">
+                            <div class="btn-icon">🔇</div>
+                            <div class="btn-meta">
+                                <span class="btn-label">Silence Alarm</span>
+                                <span class="btn-desc">Deactivate Siren</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-photo" onclick="dispatchCommand('STEALTH_PHOTO', 'FRONT')">
+                            <div class="btn-icon">🤳</div>
+                            <div class="btn-meta">
+                                <span class="btn-label">Snap Front Photo</span>
+                                <span class="btn-desc">Thief Face Mugshot</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-photo" style="border-color: var(--accent-cyan);" onclick="dispatchCommand('STEALTH_PHOTO', 'BACK')">
+                            <div class="btn-icon">📷</div>
+                            <div class="btn-meta">
+                                <span class="btn-label">Snap Back Photo</span>
+                                <span class="btn-desc">Surroundings & Street</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-fake-power" onclick="dispatchCommand('FAKE_POWER_OFF')">
+                            <div class="btn-icon">📴</div>
+                            <div class="btn-meta">
+                                <span class="btn-label">Fake Power-Off</span>
+                                <span class="btn-desc">Blackout Stealth Decoy</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-lost" onclick="openLostMessageModal()">
+                            <div class="btn-icon">⚠️</div>
+                            <div class="btn-meta">
+                                <span class="btn-label">Lost Mode Lockout</span>
+                                <span class="btn-desc">Custom Emergency Overlay</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-locate" onclick="dispatchCommand('LOCATE')">
+                            <div class="btn-icon">📡</div>
+                            <div class="btn-meta">
+                                <span class="btn-label">High-Res GPS Ping</span>
+                                <span class="btn-desc">Immediate Location Fix</span>
+                            </div>
+                        </button>
+
+                        <button class="action-btn btn-wipe" onclick="confirmRemoteWipe()">
+                            <div class="btn-icon">💥</div>
+                            <div class="btn-meta">
+                                <span class="btn-label">Remote Wipe</span>
+                                <span class="btn-desc">Sanitize Data & Storage</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Intruder Break-in Mugshots & Audit Trail -->
+            <section class="cockpit-column right-column">
+                <!-- Intruder Detection Gallery -->
+                <div class="cyber-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span class="title-glyph">👁</span> INTRUDER BREAK-IN MUGSHOTS
+                        </div>
+                        <span class="badge-count" id="intruderCount">0 Captured</span>
+                    </div>
+
+                    <div class="intruder-gallery" id="intruderGallery">
+                        <div class="empty-state">No intrusion attempts recorded. Perimeter secure.</div>
+                    </div>
+                </div>
+
+                <!-- Command Audit Trail -->
+                <div class="cyber-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span class="title-glyph">📜</span> CRYPTOGRAPHIC COMMAND AUDIT LOG
+                        </div>
+                        <span class="badge-tag">SEC-VERIFIED</span>
+                    </div>
+
+                    <div class="audit-table-wrapper">
+                        <table class="cyber-table">
+                            <thead>
+                                <tr>
+                                    <th>COMMAND ID</th>
+                                    <th>ACTION</th>
+                                    <th>STATUS</th>
+                                    <th>TIMESTAMP</th>
+                                    <th>RESULT / TELEMETRY</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Device Owner Enrollment Guidance Panel -->
+                <div class="cyber-panel enrollment-banner">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <span class="title-glyph">🛡</span> ENTERPRISE ENROLLMENT CHEAT SHEET
+                        </div>
+                    </div>
+                    <p class="enrollment-desc">
+                        To unlock <strong>Anti-Factory Reset</strong> and <strong>Hardware Anti-Uninstall Hardlock</strong>, enroll your target phone into Mode B via ADB:
+                    </p>
+                    <div class="code-box">
+                        <code>adb shell dpm set-device-owner com.securix.security/.receiver.SecurixDeviceAdminReceiver</code>
+                        <button class="btn-copy" onclick="copyAdbCommand()">Copy</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Lost Mode Message Modal -->
+    <div class="cyber-modal" id="lostModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>ENGAGE LOST PHONE LOCKOUT OVERLAY</h3>
+                <button class="modal-close" onclick="closeLostModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>Customize the high-priority emergency message displayed over the thief's lockscreen:</p>
+                <textarea id="lostMsgInput" rows="3" class="cyber-input">THIS PHONE IS REPORTED STOLEN. ALL SENSORS & GPS TRANSMITTING TO POLICE. RETURN IMMEDIATELY.</textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeLostModal()">Cancel</button>
+                <button class="btn-confirm" onclick="dispatchLostMode()">Engage Lockout</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/public/app.js"></script>
+</body>
+</html>
