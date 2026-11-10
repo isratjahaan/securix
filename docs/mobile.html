@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SECURIX — মোবাইল রিমোট কন্ট্রোল ড্যাশবোর্ড</title>
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #20E88A;
+            --bg: #080D18;
+            --surface: #111B2B;
+            --card: #162238;
+            --border: #233854;
+            --cyan: #00D9C5;
+            --red: #FF3B5C;
+            --amber: #FFAA00;
+            --text: #FFFFFF;
+            --text-dim: #94A3B8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Hind Siliguri', 'Plus Jakarta Sans', sans-serif;
+            padding: 14px;
+            padding-bottom: 95px;
+        }
+
+        /* Top Header */
+        .m-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            margin-bottom: 14px;
+        }
+
+        .m-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .m-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            border: 1px solid var(--primary);
+        }
+
+        .m-brand-name {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text);
+        }
+
+        .m-brand-sub {
+            font-size: 11px;
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        .pulse-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(32, 232, 138, 0.12);
+            padding: 5px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(32, 232, 138, 0.3);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+
+        /* Target Phone Status Card */
+        .target-card {
+            background: linear-gradient(145deg, #131E30, #0F1726);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .target-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--cyan), var(--primary));
+        }
+
+        .target-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .target-title {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .target-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 2px;
+        }
+
+        .target-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--cyan);
+        }
+
+        .target-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .chip {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chip.armed {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Big Emergency Buttons */
+        .section-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--cyan);
+            letter-spacing: 0.5px;
+            margin: 16px 0 10px 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .btn-action {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 12px;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .btn-action:active {
+            transform: scale(0.96);
+        }
+
+        .btn-action .icon {
+            font-size: 30px;
+            margin-bottom: 6px;
+        }
+
+        .btn-action .title {
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .btn-action .sub {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 3px;
+        }
+
+        .btn-alarm {
+            border-color: var(--red);
+            background: linear-gradient(180deg, rgba(255, 59, 92, 0.12), var(--surface));
+        }
+        .btn-alarm .title { color: var(--red); }
+
+        .btn-lock {
+            border-color: var(--primary);
+            background: linear-gradient(180deg, rgba(32, 232, 138, 0.12), var(--surface));
+        }
+        .btn-lock .title { color: var(--primary); }
+
+        .btn-photo {
+            border-color: var(--cyan);
+            background: linear-gradient(180deg, rgba(0, 217, 197, 0.12), var(--surface));
+        }
+        .btn-photo .title { color: var(--cyan); }
+
+        .btn-lost {
+            border-color: var(--amber);
+            background: linear-gradient(180deg, rgba(255, 170, 0, 0.12), var(--surface));
+        }
+        .btn-lost .title { color: var(--amber); }
+
+        /* Map Section */
+        .map-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .map-header {
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .map-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .btn-open-gmaps {
+            background: var(--primary);
+            color: #080D18;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        #mobileMap {
+            height: 240px;
+            width: 100%;
+        }
+
+        .gps-coords-bar {
+            padding: 8px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--cyan);
+            background: #0A101D;
+            border-top: 1px solid var(--border);
+        }
+
+        /* SMS Emergency Controls */
+        .sms-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .sms-header {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--amber);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sms-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .sms-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sms-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            border-radius: 10px;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .sms-btn:active {
+            background: var(--border);
+        }
+
+        .sms-cmd {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--cyan);
+            font-size: 11px;
+        }
+
+        /* Intruder Mugshots */
+        .intruder-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .intruder-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .m-intruder-card {
+            display: flex;
+            gap: 12px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .m-intruder-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--red);
+        }
+
+        .m-intruder-meta {
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .m-intruder-reason {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            right: 20px;
+            background: #162238;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            z-index: 9999;
+            display: none;
+        }
+
+        /* Fixed Bottom Navigation Bar (নিচের ফিক্সড ব্যাক/ফ্রন্ট নেভিগেশন বার) */
+        .bottom-nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: rgba(17, 27, 43, 0.96);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 8px;
+            z-index: 9990;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+            min-width: 54px;
+        }
+
+        .nav-item:active {
+            transform: scale(0.9);
+            background: rgba(35, 56, 84, 0.5);
+        }
+
+        .nav-item .nav-icon {
+            font-size: 19px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .nav-item .nav-text {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-item.highlight-front {
+            color: var(--primary);
+        }
+
+        .nav-item.highlight-back {
+            color: var(--cyan);
+        }
+
+        /* APK Download Banner */
+        .m-apk-banner {
+            background: linear-gradient(135deg, rgba(32, 232, 138, 0.15), rgba(0, 217, 197, 0.15));
+            border: 1px solid var(--primary);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            color: var(--text);
+            margin-bottom: 14px;
+            box-shadow: 0 4px 15px rgba(32, 232, 138, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .m-apk-banner:active {
+            transform: scale(0.98);
+            background: linear-gradient(135deg, rgba(32, 232, 138, 0.25), rgba(0, 217, 197, 0.25));
+        }
+
+        .m-apk-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .m-apk-icon {
+            font-size: 24px;
+            background: rgba(32, 232, 138, 0.2);
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--primary);
+        }
+
+        .m-apk-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .m-apk-sub {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .m-apk-btn {
+            background: var(--primary);
+            color: #080D18;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 8px 12px;
+            border-radius: 8px;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="m-header">
+        <div class="m-brand">
+            <img src="/public/securix_logo.jpg" alt="SECURIX" class="m-logo">
+            <div>
+                <div class="m-brand-name">SECURIX</div>
+                <div class="m-brand-sub">জরুরী মোবাইল রিমোট কন্ট্রোল</div>
+            </div>
+        </div>
+        <div class="pulse-badge">
+            <div class="pulse-dot"></div>
+            <span>লাইভ সংযোগ</span>
+        </div>
+    </div>
+
+    <!-- APK Download Banner -->
+    <a href="/download-apk" class="m-apk-banner" download="securix-debug.apk">
+        <div class="m-apk-left">
+            <div class="m-apk-icon">📥</div>
+            <div>
+                <div class="m-apk-title">SECURIX Debug APK ডাউনলোড করুন</div>
+                <div class="m-apk-sub">v1.0.0 (Debug APK) • সাইজ: 8.0 MB • সরাসরি ইন্সটল করুন</div>
+            </div>
+        </div>
+        <div class="m-apk-btn">ডাউনলোড ⬇</div>
+    </a>
+
+    <!-- Target Device Card -->
+    <div class="target-card">
+        <div class="target-top">
+            <div>
+                <div class="target-title">হারিয়ে যাওয়া মোবাইল</div>
+                <div class="target-name" id="targetName">Google Pixel 8 Pro</div>
+                <div class="target-id" id="targetId">আইডি: SEC-ALPHA-01</div>
+            </div>
+            <a href="/" style="font-size: 11px; color: var(--cyan); text-decoration: none;">ডেস্কটপ ভিউ</a>
+        </div>
+        <div class="target-chips">
+            <div class="chip armed" id="chipArmed">🛡️ সম্পূর্ণ সুরক্ষিত (ARMED)</div>
+            <div class="chip" id="chipBattery">⚡ ব্যাটারি: 88%</div>
+            <div class="chip" id="chipMode">MODE B: DEVICE OWNER</div>
+        </div>
+    </div>
+
+    <!-- Emergency Controls -->
+    <div class="section-label">⚡ দ্রুত রিমোট অ্যাকশন (অন্য ফোন থেকে কন্ট্রোল)</div>
+
+    <div class="action-grid">
+        <button class="btn-action btn-alarm" onclick="sendCmd('ALARM')">
+            <div class="icon">🚨</div>
+            <div class="title">সাইরেন বাজাও</div>
+            <div class="sub">ফুল ভলিউমে চিৎকার করবে</div>
+        </button>
+
+        <button class="btn-action" style="border-color: #64748B;" onclick="sendCmd('STOP_ALARM')">
+            <div class="icon">🔇</div>
+            <div class="title">সাইরেন থামাও</div>
+            <div class="sub">শব্দ বন্ধ করো</div>
+        </button>
+
+        <button class="btn-action btn-lock" onclick="sendCmd('LOCK')">
+            <div class="icon">🔒</div>
+            <div class="title">স্ক্রিন লক করো</div>
+            <div class="sub">তাত্ক্ষণিক লক হয়ে যাবে</div>
+        </button>
+
+        <button class="btn-action btn-photo" onclick="sendCmd('STEALTH_PHOTO', 'FRONT')">
+            <div class="icon">🤳</div>
+            <div class="title">সামনের ছবি (Front)</div>
+            <div class="sub">চোরের মুখের ছবি</div>
+        </button>
+
+        <button class="btn-action" style="border-color: var(--cyan); background: linear-gradient(180deg, rgba(0, 217, 197, 0.12), var(--surface));" onclick="sendCmd('STEALTH_PHOTO', 'BACK')">
+            <div class="icon">📷</div>
+            <div class="title">পেছনের ছবি (Back)</div>
+            <div class="sub">রাস্তা ও পরিবেশের দৃশ্য</div>
+        </button>
+
+        <button class="btn-action btn-lost" onclick="promptLostMessage()">
+            <div class="icon">⚠️</div>
+            <div class="title">লস্ট মোড চালু</div>
+            <div class="sub">স্ক্রিনে মালিকের মেসেজ</div>
+        </button>
+
+        <button class="btn-action" style="border-color: var(--cyan);" onclick="sendCmd('FAKE_POWER_OFF')">
+            <div class="icon">📴</div>
+            <div class="title">ভুয়া পাওয়ার-অফ</div>
+            <div class="sub">বন্ধ দেখিয়ে ট্র্যাকিং চালু</div>
+        </button>
+
+        <button class="btn-action" style="border-color: var(--primary);" onclick="sendCmd('LOCATE')">
+            <div class="icon">📍</div>
+            <div class="title">লোকেশন আপডেট</div>
+            <div class="sub">তাত্ক্ষণিক GPS পিন</div>
+        </button>
+
+        <button class="btn-action" style="border-color: var(--red);" onclick="confirmWipe()">
+            <div class="icon">💥</div>
+            <div class="title">সব ডেটা মুছুন</div>
+            <div class="sub">ফ্যাক্টরি ফরম্যাট</div>
+        </button>
+    </div>
+
+    <!-- Live GPS Map -->
+    <div class="map-card">
+        <div class="map-header">
+            <div class="map-title">📍 লাইভ স্যাটেলাইট লোকেশন</div>
+            <a href="https://maps.google.com/?q=37.7749,-122.4194" target="_blank" id="btnGmaps" class="btn-open-gmaps">
+                Google Maps এ খুলুন ↗
+            </a>
+        </div>
+        <div id="mobileMap"></div>
+        <div class="gps-coords-bar" id="mobileGpsBar">
+            LAT: 37.774900 • LNG: -122.419400
+        </div>
+    </div>
+
+    <!-- Offline SMS Fallback (ইন্টারনেট না থাকলেও কাজ করবে) -->
+    <div class="sms-box">
+        <div class="sms-header">
+            <span>✉️</span> অফলাইন SMS কন্ট্রোল (ইন্টারনেট না থাকলে)
+        </div>
+        <p class="sms-desc">
+            চোর যদি ডাটা বা ওয়াই-ফাই বন্ধ করে দেয়, তবে নিচের বাটনে ট্যাপ করে আপনার অন্য ফোন থেকে সাধারণ SMS পাঠিয়ে নিয়ন্ত্রণ করুন:
+        </p>
+        <div class="sms-buttons">
+            <a href="sms:?body=%23SECURIX%23LOCATE%231234" class="sms-btn">
+                <span>📍 লোকেশন চাও (SMS Reply আসবে)</span>
+                <span class="sms-cmd">#SECURIX#LOCATE#1234</span>
+            </a>
+            <a href="sms:?body=%23SECURIX%23ALARM%231234" class="sms-btn">
+                <span>🚨 তীব্র সাইরেন বাজাও</span>
+                <span class="sms-cmd">#SECURIX#ALARM#1234</span>
+            </a>
+            <a href="sms:?body=%23SECURIX%23LOCK%231234" class="sms-btn">
+                <span>🔒 দূর থেকে স্ক্রিন লক করো</span>
+                <span class="sms-cmd">#SECURIX#LOCK#1234</span>
+            </a>
+            <a href="sms:?body=%23SECURIX%23FAKE_POWER%231234" class="sms-btn">
+                <span>📴 ভুয়া শাটডাউন স্ক্রিন আনো</span>
+                <span class="sms-cmd">#SECURIX#FAKE_POWER#1234</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Intruder Mugshots -->
+    <div class="intruder-section">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="map-title">👁️ চোরের ছবি ও অনুপ্রবেশের রেকর্ড</div>
+            <span id="mIntruderCount" style="color:var(--red); font-size:12px; font-weight:700;">০ টি ছবি</span>
+        </div>
+        <div class="intruder-list" id="mIntruderList">
+            <div style="color:var(--text-dim); font-size:12px; text-align:center; padding:16px;">
+                কোনো অনুপ্রবেশকারী শনাক্ত হয়নি। ডিভাইস নিরাপদ।
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let currentTargetId = 'SEC-ALPHA-01';
+        let map, marker, circle;
+        let curLat = 37.7749, curLng = -122.4194;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMobileMap();
+            initSSE();
+        });
+
+        function initMobileMap() {
+            map = L.map('mobileMap', { zoomControl: false, attributionControl: false }).setView([curLat, curLng], 14);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+
+            const emeraldPin = L.divIcon({
+                className: 'm-pin',
+                html: '<div style="width:16px;height:16px;border-radius:50%;background:#20E88A;border:2px solid #080D18;box-shadow:0 0 12px #20E88A;"></div>',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+
+            marker = L.marker([curLat, curLng], { icon: emeraldPin }).addTo(map);
+            circle = L.circle([curLat, curLng], { radius: 80, color: '#00D9C5', fillColor: '#00D9C5', fillOpacity: 0.15, weight: 1 }).addTo(map);
+        }
+
+        function updateMap(lat, lng, acc) {
+            curLat = lat; curLng = lng;
+            if (!map || !marker) return;
+            marker.setLatLng([lat, lng]);
+            if (circle) {
+                circle.setLatLng([lat, lng]);
+                circle.setRadius(acc || 50);
+            }
+            map.panTo([lat, lng]);
+            document.getElementById('mobileGpsBar').textContent = `LAT: ${lat.toFixed(6)} • LNG: ${lng.toFixed(6)}`;
+            document.getElementById('btnGmaps').href = `https://maps.google.com/?q=${lat},${lng}`;
+        }
+
+        function initSSE() {
+            const ev = new EventSource('/api/events');
+
+            ev.addEventListener('initial_state', (e) => {
+                const data = JSON.parse(e.data);
+                if (data.devices && data.devices.length > 0) {
+                    applyDevice(data.devices[0]);
+                }
+                if (data.intruders && data.intruders.length > 0) {
+                    renderIntruders(data.intruders);
+                }
+            });
+
+            ev.addEventListener('device_update', (e) => {
+                const dev = JSON.parse(e.data);
+                applyDevice(dev);
+            });
+
+            ev.addEventListener('intruder_alert', (e) => {
+                const alert = JSON.parse(e.data);
+                addIntruderCard(alert, true);
+            });
+        }
+
+        function applyDevice(dev) {
+            currentTargetId = dev.deviceId;
+            document.getElementById('targetName').textContent = dev.deviceName || 'Android Device';
+            document.getElementById('targetId').textContent = 'আইডি: ' + dev.deviceId;
+            document.getElementById('chipBattery').textContent = `⚡ ব্যাটারি: ${dev.batteryLevel}%`;
+            document.getElementById('chipMode').textContent = dev.isDeviceOwner ? 'MODE B: DEVICE OWNER' : 'MODE A: STANDARD';
+
+            if (dev.latitude && dev.longitude) {
+                updateMap(dev.latitude, dev.longitude, dev.accuracy);
+            }
+        }
+
+        async function sendCmd(type, payload = '') {
+            try {
+                showToast(`কমান্ড পাঠানো হচ্ছে: ${type}...`);
+                const res = await fetch('/api/command/dispatch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        deviceId: currentTargetId,
+                        type: type,
+                        payload: payload
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ সফল! কমান্ড কার্যকর হয়েছে (ID: ${data.commandId})`);
+                } else {
+                    alert('কমান্ড ব্যর্থ হয়েছে: ' + data.error);
+                }
+            } catch (err) {
+                alert('নেটওয়ার্ক ত্রুটি: ' + err.message);
+            }
+        }
+
+        function promptLostMessage() {
+            const msg = prompt("হারিয়ে যাওয়া ফোনের স্ক্রিনে যে মেসেজ দেখাতে চান লিখুন:", "এই ফোনটি চুরি হয়েছে। অনুগ্রহ করে এই নম্বরে যোগাযোগ করুন।");
+            if (msg) {
+                sendCmd('LOST_MODE', msg);
+            }
+        }
+
+        function confirmWipe() {
+            if (confirm("সতর্কতা: এটি ফোনের সব ব্যক্তিগত ছবি, ফাইল এবং ডেটা স্থায়ীভাবে মুছে সম্পূর্ণ ফ্যাক্টরি রিসেট করে দেবে। আপনি কি নিশ্চিত?")) {
+                const pin = prompt("আপনার ৪-ডিজিট সিকিউরিটি পিন দিন:");
+                if (pin) {
+                    sendCmd('WIPE_DATA', pin);
+                }
+            }
+        }
+
+        function renderIntruders(alerts) {
+            const list = document.getElementById('mIntruderList');
+            document.getElementById('mIntruderCount').textContent = `${alerts.length} টি ছবি`;
+            list.innerHTML = '';
+            alerts.forEach(a => addIntruderCard(a, false));
+        }
+
+        function addIntruderCard(alert, prepend = true) {
+            const list = document.getElementById('mIntruderList');
+            const card = document.createElement('div');
+            card.className = 'm-intruder-card';
+
+            const photo = alert.photoBase64 ? `data:image/jpeg;base64,${alert.photoBase64}` : '/public/securix_logo.jpg';
+            const time = new Date(alert.timestamp).toLocaleTimeString();
+
+            card.innerHTML = `
+                <img src="${photo}" class="m-intruder-img">
+                <div class="m-intruder-meta">
+                    <div class="m-intruder-reason">🚨 ${alert.triggerReason}</div>
+                    <div style="color:var(--text-dim);font-size:11px;">সময়: ${time}</div>
+                    <div style="color:var(--cyan);font-family:monospace;font-size:11px;">GPS: ${alert.latitude.toFixed(4)}, ${alert.longitude.toFixed(4)}</div>
+                </div>
+            `;
+
+            if (prepend && list.firstChild) {
+                list.insertBefore(card, list.firstChild);
+            } else {
+                list.appendChild(card);
+            }
+            document.getElementById('mIntruderCount').textContent = `${list.querySelectorAll('.m-intruder-card').length} টি ছবি`;
+        }
+
+        function showToast(text) {
+            const t = document.getElementById('toast');
+            t.textContent = text;
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 3000);
+        }
+
+        // Fixed Bottom Navigation Handlers
+        function handleNavBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        function handleNavFront() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast("🏠 ফ্রন্ট / হোম স্ক্রিনে এসেছেন");
+        }
+
+        function scrollToMap() {
+            document.getElementById('mobileMap').scrollIntoView({ behavior: 'smooth' });
+            showToast("📍 লোকেশন ম্যাপে যাওয়া হচ্ছে");
+        }
+    </script>
+
+    <!-- Fixed Bottom Navigation Bar (নিচের ব্যাক / ফ্রন্ট ও ক্যামেরা নেভিগেশন বার) -->
+    <nav class="bottom-nav-bar">
+        <button class="nav-item" onclick="handleNavBack()" title="Back / পূর্ববর্তী পেজ">
+            <span class="nav-icon">⬅️</span>
+            <span class="nav-text">Back</span>
+        </button>
+        <button class="nav-item" onclick="handleNavFront()" title="Front / হোম স্ক্রিন">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">Front</span>
+        </button>
+        <button class="nav-item highlight-front" onclick="sendCmd('STEALTH_PHOTO', 'FRONT')" title="Front Camera দিয়ে ছবি">
+            <span class="nav-icon">🤳</span>
+            <span class="nav-text">Front Cam</span>
+        </button>
+        <button class="nav-item highlight-back" onclick="sendCmd('STEALTH_PHOTO', 'BACK')" title="Back Camera দিয়ে ছবি">
+            <span class="nav-icon">📷</span>
+            <span class="nav-text">Back Cam</span>
+        </button>
+        <button class="nav-item" onclick="scrollToMap()" title="GPS Satellite Map">
+            <span class="nav-icon">📍</span>
+            <span class="nav-text">Map</span>
+        </button>
+    </nav>
+</body>
+</html>
