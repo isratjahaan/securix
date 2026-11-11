@@ -1,0 +1,678 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+  LOCKED
+  DEACTIVATED
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  COMPLIANT
+  NON_COMPLIANT
+  FLAGGED
+  DEREGISTERED
+}
+
+enum AssetType {
+  WEBSITE
+  DOMAIN
+  IP_ADDRESS
+  NETWORK
+  ANDROID_DEVICE
+  PROJECT_ENVIRONMENT
+  TEST_ENVIRONMENT
+}
+
+enum AuthorizationStatus {
+  AUTHORIZED
+  PENDING_VERIFICATION
+  UNAUTHORIZED
+  REVOKED
+}
+
+enum ModuleStatus {
+  INSTALLED
+  ACTIVE
+  DISABLED
+  MAINTENANCE
+  DEGRADED
+  BLOCKED
+  ARCHIVED
+}
+
+enum HealthStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+  OFFLINE
+  UNKNOWN
+}
+
+enum SeverityLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFORMATIONAL
+}
+
+enum AlertStatus {
+  NEW
+  ACKNOWLEDGED
+  ASSIGNED
+  ESCALATED
+  RESOLVED
+  DISMISSED
+}
+
+enum IncidentStatus {
+  NEW
+  ACKNOWLEDGED
+  INVESTIGATING
+  CONTAINED
+  RESOLVED
+  CLOSED
+}
+
+enum IncidentPriority {
+  P0_CRITICAL
+  P1_HIGH
+  P2_MEDIUM
+  P3_LOW
+}
+
+enum ThreatIndicatorType {
+  IP
+  DOMAIN
+  URL
+  FILE_HASH
+  EMAIL
+  CVE
+}
+
+enum CaseStatus {
+  ACTIVE
+  IN_PROGRESS
+  PENDING_REVIEW
+  CLOSED
+  ARCHIVED
+}
+
+enum BackupStatus {
+  SCHEDULED
+  RUNNING
+  COMPLETED
+  FAILED
+  VERIFYING
+  VERIFIED
+}
+
+// 1. User
+model User {
+  id                   String        @id @default(uuid())
+  email                String        @unique
+  username             String        @unique
+  passwordHash         String
+  fullName             String
+  phone                String?
+  status               AccountStatus @default(ACTIVE)
+  isEmailVerified      Boolean       @default(false)
+  mfaEnabled           Boolean       @default(false)
+  mfaSecret            String?
+  lastLoginAt          DateTime?
+  lastLoginIp          String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  adminProfile         AdminProfile?
+  userRoles            UserRole[]
+  sessions             Session[]
+  devices              Device[]
+  assignedIncidents    IncidentAssignment[]
+  auditLogs            AuditLog[]
+  forensicCases        ForensicCase[]
+  evidenceCollected    EvidenceMetadata[]
+  chainOfCustodyLogs   ChainOfCustodyRecord[]
+  notificationPreferences NotificationPreference[]
+  notifications        Notification[]
+  assetsOwned          Asset[]
+}
+
+// 2. AdminProfile
+model AdminProfile {
+  id                   String    @id @default(uuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminRoleType        String    // SUPER_ADMIN, SECURITY_ADMIN, MODULE_ADMIN, AUDITOR
+  department           String?
+  assignedModules      String[]  // IDs of modules if MODULE_ADMIN
+  mfaEnforced          Boolean   @default(true)
+  securityBadgeNumber  String?
+  lastSecurityReview   DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+// 3. Role
+model Role {
+  id                   String           @id @default(uuid())
+  name                 String           @unique
+  description          String?
+  isSystemRole         Boolean          @default(false)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  rolePermissions      RolePermission[]
+  userRoles            UserRole[]
+}
+
+// 4. Permission
+model Permission {
+  id                   String           @id @default(uuid())
+  code                 String           @unique // e.g. dashboard.view, users.suspend
+  name                 String
+  description          String?
+  category             String           // e.g. users, modules, incidents, threats
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  rolePermissions      RolePermission[]
+}
+
+// 5. RolePermission
+model RolePermission {
+  id                   String      @id @default(uuid())
+  roleId               String
+  permissionId         String
+  role                 Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission           Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt            DateTime    @default(now())
+
+  @@unique([roleId, permissionId])
+}
+
+// 6. UserRole
+model UserRole {
+  id                   String      @id @default(uuid())
+  userId               String
+  roleId               String
+  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role                 Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt           DateTime    @default(now())
+
+  @@unique([userId, roleId])
+}
+
+// 7. Session
+model Session {
+  id                   String      @id @default(uuid())
+  userId               String
+  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token                String      @unique
+  ipAddress            String?
+  userAgent            String?
+  deviceInfo           String?
+  expiresAt            DateTime
+  isRevoked            Boolean     @default(false)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+}
+
+// 8. Device (SIS Endpoint Guardian - Android)
+model Device {
+  id                   String        @id @default(uuid())
+  deviceId             String        @unique
+  deviceName           String
+  manufacturer         String
+  model                String
+  androidVersion       String
+  securityPatchLevel   String?
+  ownerId              String
+  owner                User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  status               DeviceStatus  @default(ONLINE)
+  isCompliant          Boolean       @default(true)
+  securityPostureScore Int           @default(100)
+  encryptionEnabled    Boolean       @default(true)
+  rootDetected         Boolean       @default(false)
+  developerModeEnabled Boolean       @default(false)
+  lastSyncAt           DateTime      @default(now())
+  registeredAt         DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  alerts               SecurityAlert[]
+  events               SecurityEvent[]
+}
+
+// 9. Asset
+model Asset {
+  id                   String              @id @default(uuid())
+  name                 String
+  type                 AssetType
+  target               String              // e.g. domain name, IP, URL
+  ownerId              String?
+  owner                User?               @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  authorizationStatus  AuthorizationStatus @default(PENDING_VERIFICATION)
+  authorizationProof   String?             // Reference to authorization document / record
+  scopeDescription     String?
+  riskStatus           SeverityLevel       @default(LOW)
+  lastAssessmentAt     DateTime?
+  tags                 String[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  alerts               SecurityAlert[]
+  incidents            Incident[]
+}
+
+// 10. Module (12-in-1 Ecosystem)
+model Module {
+  id                   String         @id // e.g. sis-identity, sis-phishing, sis-endpoint...
+  name                 String         @unique
+  displayName          String
+  description          String
+  version              String         @default("1.0.0")
+  status               ModuleStatus   @default(ACTIVE)
+  healthStatus         HealthStatus   @default(HEALTHY)
+  isCore               Boolean        @default(false)
+  apiEndpoint          String
+  documentationUrl     String?
+  icon                 String?
+  lastActivityAt       DateTime       @default(now())
+  lastHealthCheckAt    DateTime       @default(now())
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  versions             ModuleVersion[]
+  configurations       ModuleConfiguration[]
+  healthChecks         ModuleHealth[]
+  permissions          ModulePermission[]
+  dependencies         ModuleDependency[]    @relation("RequiredDependencies")
+  dependents           ModuleDependency[]    @relation("DependentModules")
+  alerts               SecurityAlert[]
+  events               SecurityEvent[]
+  incidents            Incident[]
+}
+
+// 11. ModuleVersion
+model ModuleVersion {
+  id                   String      @id @default(uuid())
+  moduleId             String
+  module               Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  version              String
+  changelog            String?
+  releaseDate          DateTime    @default(now())
+  isCurrent            Boolean     @default(true)
+  isApproved           Boolean     @default(true)
+  manifestHash         String?
+}
+
+// 12. ModuleDependency
+model ModuleDependency {
+  id                   String      @id @default(uuid())
+  moduleId             String
+  module               Module      @relation("DependentModules", fields: [moduleId], references: [id], onDelete: Cascade)
+  dependsOnModuleId    String
+  dependsOnModule      Module      @relation("RequiredDependencies", fields: [dependsOnModuleId], references: [id], onDelete: Cascade)
+  isRequired           Boolean     @default(true)
+  description          String?
+  createdAt            DateTime    @default(now())
+
+  @@unique([moduleId, dependsOnModuleId])
+}
+
+// 13. ModulePermission
+model ModulePermission {
+  id                   String      @id @default(uuid())
+  moduleId             String
+  module               Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  permissionCode       String
+  description          String?
+  createdAt            DateTime    @default(now())
+}
+
+// 14. ModuleConfiguration
+model ModuleConfiguration {
+  id                   String      @id @default(uuid())
+  moduleId             String
+  module               Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  configKey            String
+  configValue          String      // Stored safely (JSON or string)
+  isSecret             Boolean     @default(false)
+  description          String?
+  updatedBy            String?
+  updatedAt            DateTime    @updatedAt
+
+  @@unique([moduleId, configKey])
+}
+
+// 15. ModuleHealth
+model ModuleHealth {
+  id                   String        @id @default(uuid())
+  moduleId             String
+  module               Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  status               HealthStatus
+  responseTimeMs       Int           @default(0)
+  cpuUsagePercent      Float         @default(0)
+  memoryUsageMb        Float         @default(0)
+  activeConnections    Int           @default(0)
+  errorCount           Int           @default(0)
+  details              String?
+  checkedAt            DateTime      @default(now())
+}
+
+// 16. SecurityEvent
+model SecurityEvent {
+  id                   String        @id @default(uuid())
+  moduleId             String
+  module               Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  eventType            String
+  severity             SeverityLevel
+  message              String
+  sourceIp             String?
+  targetResource       String?
+  deviceId             String?
+  device               Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  metadata             Json?
+  timestamp            DateTime      @default(now())
+}
+
+// 17. SecurityAlert
+model SecurityAlert {
+  id                   String        @id @default(uuid())
+  alertId              String        @unique // formatted readable e.g. ALT-2026-001
+  title                String
+  description          String
+  moduleId             String
+  module               Module        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  severity             SeverityLevel
+  status               AlertStatus   @default(NEW)
+  sourceIp             String?
+  targetResource       String?
+  deviceId             String?
+  device               Device?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  assetId              String?
+  asset                Asset?        @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  incidentId           String?
+  incident             Incident?     @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  assignedTo           String?
+  acknowledgedAt       DateTime?
+  resolvedAt           DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+// 18. Incident
+model Incident {
+  id                   String            @id @default(uuid())
+  incidentCode         String            @unique // e.g. INC-2026-0042
+  title                String
+  description          String
+  moduleId             String?
+  module               Module?           @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  priority             IncidentPriority  @default(P2_MEDIUM)
+  status               IncidentStatus    @default(NEW)
+  assetId              String?
+  asset                Asset?            @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  resolutionSummary    String?
+  containedAt          DateTime?
+  resolvedAt           DateTime?
+  closedAt             DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  alerts               SecurityAlert[]
+  assignments          IncidentAssignment[]
+  forensicCases        ForensicCase[]
+  threatIndicators     ThreatIndicator[]
+}
+
+// 19. IncidentAssignment
+model IncidentAssignment {
+  id                   String      @id @default(uuid())
+  incidentId           String
+  incident             Incident    @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  userId               String
+  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleInIncident       String      // Lead Investigator, Analyst, Responder
+  assignedAt           DateTime    @default(now())
+
+  @@unique([incidentId, userId])
+}
+
+// 20. ThreatIndicator (IOC)
+model ThreatIndicator {
+  id                   String              @id @default(uuid())
+  indicatorValue       String              @unique
+  type                 ThreatIndicatorType
+  severity             SeverityLevel
+  confidenceScore      Int                 @default(80) // 0 - 100
+  threatCategory       String              // Ransomware, Phishing, C2, Botnet, Malware
+  source               String              // Internal, AlienVault, MISP, AbuseIPDB
+  description          String?
+  firstSeenAt          DateTime            @default(now())
+  lastSeenAt           DateTime            @default(now())
+  expiresAt            DateTime?
+  incidentId           String?
+  incident             Incident?           @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+}
+
+// 21. ThreatFeedSource
+model ThreatFeedSource {
+  id                   String        @id @default(uuid())
+  name                 String        @unique
+  url                  String
+  format               String        // JSON, STIX2, TAXII, CSV
+  syncIntervalMinutes  Int           @default(60)
+  lastSyncAt           DateTime?
+  status               HealthStatus  @default(HEALTHY)
+  lastError            String?
+  totalIndicatorsCount Int           @default(0)
+  isEnabled            Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+}
+
+// 22. ForensicCase
+model ForensicCase {
+  id                   String        @id @default(uuid())
+  caseNumber           String        @unique // e.g. DFC-2026-0012
+  title                String
+  description          String
+  status               CaseStatus    @default(ACTIVE)
+  priority             IncidentPriority @default(P1_HIGH)
+  leadInvestigatorId   String
+  leadInvestigator     User          @relation(fields: [leadInvestigatorId], references: [id], onDelete: Restrict)
+  incidentId           String?
+  incident             Incident?     @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  findingsSummary      String?
+  openedAt             DateTime      @default(now())
+  closedAt             DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  evidences            EvidenceMetadata[]
+}
+
+// 23. EvidenceMetadata
+model EvidenceMetadata {
+  id                   String        @id @default(uuid())
+  evidenceNumber       String        @unique // e.g. EVD-2026-0089
+  caseId               String
+  case                 ForensicCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  name                 String
+  evidenceType         String        // Disk Image, Memory Dump, Packet Capture, Access Log, APK
+  sha256Hash           String
+  md5Hash              String?
+  fileSizeBytes        BigInt        @default(0)
+  storageLocation      String        // Secure encrypted repository URI
+  collectorId          String
+  collector            User          @relation(fields: [collectorId], references: [id], onDelete: Restrict)
+  collectedAt          DateTime      @default(now())
+  notes                String?
+  createdAt            DateTime      @default(now())
+
+  chainOfCustody       ChainOfCustodyRecord[]
+}
+
+// 24. ChainOfCustodyRecord
+model ChainOfCustodyRecord {
+  id                   String            @id @default(uuid())
+  evidenceId           String
+  evidence             EvidenceMetadata  @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  actorId              String
+  actor                User              @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  action               String            // CHECKOUT, CHECKIN, ANALYSIS, TRANSFER, ARCHIVE
+  purpose              String
+  transferredTo        String?
+  custodyTimestamp     DateTime          @default(now())
+  notes                String?
+}
+
+// 25. BackupJob
+model BackupJob {
+  id                   String        @id @default(uuid())
+  name                 String
+  targetModule         String        // e.g. SIS Vault Guardian, SIS Cyber SOC, Database
+  scheduleCron         String        // e.g. "0 2 * * *"
+  retentionDays        Int           @default(30)
+  storageProvider      String        // S3 Encrypted, Azure Blob, Cold Vault
+  isEnabled            Boolean       @default(true)
+  lastRunStatus        BackupStatus  @default(COMPLETED)
+  lastRunAt            DateTime?
+  nextRunAt            DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  records              BackupRecord[]
+}
+
+// 26. BackupRecord
+model BackupRecord {
+  id                   String        @id @default(uuid())
+  jobId                String
+  job                  BackupJob     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status               BackupStatus
+  sizeBytes            BigInt        @default(0)
+  sha256Checksum       String
+  isIntegrityVerified  Boolean       @default(true)
+  verifiedAt           DateTime?
+  backupPath           String
+  startedAt            DateTime      @default(now())
+  completedAt          DateTime?
+  errorMessage         String?
+}
+
+// 27. Notification
+model Notification {
+  id                   String        @id @default(uuid())
+  userId               String?
+  user                 User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  title                String
+  message              String
+  type                 String        // ALERT, INCIDENT, SYSTEM, BACKUP, MODULE
+  severity             SeverityLevel @default(INFORMATIONAL)
+  isRead               Boolean       @default(false)
+  linkUrl              String?
+  createdAt            DateTime      @default(now())
+}
+
+// 28. NotificationPreference
+model NotificationPreference {
+  id                   String        @id @default(uuid())
+  userId               String
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel              String        // IN_APP, EMAIL, PUSH_FCM
+  criticalAlerts       Boolean       @default(true)
+  incidentUpdates      Boolean       @default(true)
+  backupFailures       Boolean       @default(true)
+  systemHealthDegraded Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@unique([userId, channel])
+}
+
+// 29. AuditLog
+model AuditLog {
+  id                   String        @id @default(uuid())
+  actorId              String?
+  actor                User?         @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorRole            String
+  action               String        // LOGIN, LOGOUT, MODULE_STATE_CHANGE, INCIDENT_UPDATE...
+  targetResource       String
+  resourceId           String?
+  ipAddress            String?
+  requestId            String?
+  result               String        // SUCCESS, FAILURE, DENIED
+  details              Json?
+  timestamp            DateTime      @default(now())
+
+  @@index([timestamp])
+  @@index([action])
+  @@index([targetResource])
+}
+
+// 30. SystemSetting
+model SystemSetting {
+  id                   String        @id @default(uuid())
+  category             String        // GENERAL, SECURITY, NOTIFICATION, MODULE, API, DATA, ADMIN
+  key                  String        @unique
+  value                String
+  isEncrypted          Boolean       @default(false)
+  description          String?
+  updatedBy            String?
+  updatedAt            DateTime      @updatedAt
+}
+
+// 31. Integration
+model Integration {
+  id                   String        @id @default(uuid())
+  name                 String        @unique
+  serviceType          String        // FCM, REDIS, POSTGRESQL, SMTP, REST_GATEWAY
+  endpoint             String
+  status               HealthStatus  @default(HEALTHY)
+  isConfigured         Boolean       @default(true)
+  lastCheckedAt        DateTime      @default(now())
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  healthHistory        IntegrationHealth[]
+}
+
+// 32. IntegrationHealth
+model IntegrationHealth {
+  id                   String        @id @default(uuid())
+  integrationId        String
+  integration          Integration   @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  status               HealthStatus
+  latencyMs            Int           @default(0)
+  responseCode         Int           @default(200)
+  errorMessage         String?
+  checkedAt            DateTime      @default(now())
+}
+
+// 33. ReportJob
+model ReportJob {
+  id                   String        @id @default(uuid())
+  reportType           String        // SECURITY_SUMMARY, MODULE_PERFORMANCE, INCIDENTS...
+  title                String
+  parameters           Json?
+  format               String        @default("PDF") // PDF, CSV
+  generatedBy          String
+  fileUrl              String?
+  status               String        @default("COMPLETED")
+  createdAt            DateTime      @default(now())
+}
