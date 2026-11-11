@@ -552,7 +552,7 @@
     <!-- Header -->
     <div class="m-header">
         <div class="m-brand">
-            <img src="/public/securix_logo.jpg" alt="SECURIX" class="m-logo">
+            <img src="securix_logo.jpg" alt="SECURIX" class="m-logo">
             <div>
                 <div class="m-brand-name">SECURIX</div>
                 <div class="m-brand-sub">জরুরী মোবাইল রিমোট কন্ট্রোল</div>
@@ -835,7 +835,7 @@
             const card = document.createElement('div');
             card.className = 'm-intruder-card';
 
-            const photo = alert.photoBase64 ? `data:image/jpeg;base64,${alert.photoBase64}` : '/public/securix_logo.jpg';
+            const photo = alert.photoBase64 ? `data:image/jpeg;base64,${alert.photoBase64}` : 'securix_logo.jpg';
             const time = new Date(alert.timestamp).toLocaleTimeString();
 
             card.innerHTML = `

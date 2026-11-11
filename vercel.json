@@ -6,6 +6,7 @@
   "rewrites": [
     { "source": "/mobile", "destination": "/mobile.html" },
     { "source": "/m", "destination": "/mobile.html" },
-    { "source": "/download-apk", "destination": "/securix-debug.apk" }
+    { "source": "/download-apk", "destination": "/securix-debug.apk" },
+    { "source": "/public/:path*", "destination": "/:path*" }
   ]
 }
