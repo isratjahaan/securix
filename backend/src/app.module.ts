@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
+import { EventsModule } from './events/events.module';
 import { AuthModule } from './auth/auth.module';
 import { SocModule } from './soc/soc.module';
 import { ModulesCenterModule } from './modules-center/modules.module';
+import { PhishingModule } from './phishing/phishing.module';
+import { RansomwareModule } from './ransomware/ransomware.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { UsersModule } from './users/users.module';
 import { AdminsModule } from './admins/admins.module';
@@ -23,9 +26,12 @@ import { NotificationsModule } from './notifications/notifications.module';
 @Module({
   imports: [
     PrismaModule,
+    EventsModule,
     AuthModule,
     SocModule,
     ModulesCenterModule,
+    PhishingModule,
+    RansomwareModule,
     DashboardModule,
     UsersModule,
     AdminsModule,

@@ -17,6 +17,9 @@ class SessionManager(context: Context) {
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
         private const val KEY_DARK_MODE = "dark_mode"
         private const val KEY_OFFLINE_MODE = "offline_mode"
+        private const val KEY_DEVICE_ID = "device_id"
+        private const val KEY_IS_LOCKED = "is_device_locked"
+        private const val KEY_LOCK_REASON = "device_lock_reason"
 
         // Default Android Emulator loopback to host port 4000
         const val DEFAULT_BASE_URL = "http://10.0.2.2:4000/api/"
@@ -71,6 +74,25 @@ class SessionManager(context: Context) {
 
     val isLoggedIn: Boolean
         get() = !authToken.isNullOrEmpty()
+
+    var deviceId: String
+        get() = prefs.getString(KEY_DEVICE_ID, "EP-7801-AND") ?: "EP-7801-AND"
+        set(value) = prefs.edit().putString(KEY_DEVICE_ID, value).apply()
+
+    var isDeviceLocked: Boolean
+        get() = prefs.getBoolean(KEY_IS_LOCKED, false)
+        set(value) = prefs.edit().putBoolean(KEY_IS_LOCKED, value).apply()
+
+    var lockReason: String
+        get() = prefs.getString(KEY_LOCK_REASON, "STOLEN DEVICE LOCKOUT: Remotely secured by SIS Cyber Fortress Security Operations.") ?: ""
+        set(value) = prefs.edit().putString(KEY_LOCK_REASON, value).apply()
+
+    fun clearVaultCache() {
+        prefs.edit()
+            .remove("vault_cached_master_key")
+            .remove("vault_items_cache")
+            .apply()
+    }
 
     fun clearSession() {
         prefs.edit()

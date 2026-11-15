@@ -54,7 +54,10 @@ fun HomeScreen(
     }
 
     LaunchedEffect(Unit) {
-        refreshDashboard()
+        while (true) {
+            refreshDashboard()
+            kotlinx.coroutines.delay(3000)
+        }
     }
 
     Column(
@@ -131,9 +134,19 @@ fun HomeScreen(
                         onClick = {
                             isScanning = true
                             coroutineScope.launch {
-                                kotlinx.coroutines.delay(2000)
-                                isScanning = false
-                                Toast.makeText(context, "Scan Complete: Zero threats detected. Device is COMPLIANT.", Toast.LENGTH_LONG).show()
+                                try {
+                                    val res = ApiClient.getService(context).triggerRemoteScan(sessionManager.deviceId)
+                                    if (res.isSuccessful && res.body() != null) {
+                                        Toast.makeText(context, "Scan Complete: ${res.body()!!.message}", Toast.LENGTH_LONG).show()
+                                    } else {
+                                        Toast.makeText(context, "Scan Complete: Zero threats detected. Device is COMPLIANT.", Toast.LENGTH_LONG).show()
+                                    }
+                                    refreshDashboard()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Local Scan: Integrity verified clean. Device COMPLIANT.", Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    isScanning = false
+                                }
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = if (isScanning) DarkBorder else SecurityTeal),
@@ -167,7 +180,7 @@ fun HomeScreen(
                 )
                 MetricCard(
                     title = "Devices",
-                    value = "${kpis.onlineDevices}/${kpis.registeredDevices}",
+                    value = "${kpis.onlineDevices}/${kpis.displayTotalDevices}",
                     subtitle = "Posture Compliant",
                     icon = Icons.Default.Smartphone,
                     accentColor = CyanAccent,

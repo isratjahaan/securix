@@ -1,12 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SocGateway } from '../soc/soc.gateway';
+import { EventBusService } from '../events/event-bus.service';
+import { ModuleLifecycleEvent } from '../events/security-events';
 
 @Injectable()
 export class ModulesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly socGateway: SocGateway,
+    private readonly eventBus: EventBusService,
   ) {}
 
   getAllModules() {
@@ -97,6 +100,18 @@ export class ModulesService {
 
     this.recordAudit('MODULE_ENABLED', `Module ${mod.id}`, 'SUCCESS', { actor });
     this.socGateway.broadcastModuleStateChange(mod);
+
+    // Publish to Decoupled Event Bus
+    this.eventBus.publishLifecycle(
+      new ModuleLifecycleEvent({
+        moduleId: mod.id,
+        moduleDisplayName: mod.displayName,
+        action: 'ENABLED',
+        currentStatus: 'ACTIVE',
+        actor,
+      }),
+    );
+
     return mod;
   }
 
@@ -126,6 +141,19 @@ export class ModulesService {
       affectedDependents: impact.activeDependents.map((d) => d.id),
     });
     this.socGateway.broadcastModuleStateChange(mod);
+
+    // Publish to Decoupled Event Bus
+    this.eventBus.publishLifecycle(
+      new ModuleLifecycleEvent({
+        moduleId: mod.id,
+        moduleDisplayName: mod.displayName,
+        action: 'DISABLED',
+        currentStatus: 'DISABLED',
+        actor,
+        affectedDependents: impact.activeDependents.map((d) => d.id),
+      }),
+    );
+
     return mod;
   }
 
@@ -138,6 +166,18 @@ export class ModulesService {
 
     this.recordAudit('MODULE_RESTARTED', `Module ${mod.id}`, 'SUCCESS', { actor });
     this.socGateway.broadcastModuleStateChange(mod);
+
+    // Publish to Decoupled Event Bus
+    this.eventBus.publishLifecycle(
+      new ModuleLifecycleEvent({
+        moduleId: mod.id,
+        moduleDisplayName: mod.displayName,
+        action: 'RESTARTED',
+        currentStatus: 'ACTIVE',
+        actor,
+      }),
+    );
+
     return {
       message: `Module ${mod.displayName} services successfully cycled and re-synchronized.`,
       module: mod,
@@ -152,6 +192,18 @@ export class ModulesService {
 
     this.recordAudit('MODULE_MAINTENANCE_TOGGLED', `Module ${mod.id}`, 'SUCCESS', { enabled, actor });
     this.socGateway.broadcastModuleStateChange(mod);
+
+    // Publish to Decoupled Event Bus
+    this.eventBus.publishLifecycle(
+      new ModuleLifecycleEvent({
+        moduleId: mod.id,
+        moduleDisplayName: mod.displayName,
+        action: 'MAINTENANCE',
+        currentStatus: mod.status,
+        actor,
+      }),
+    );
+
     return mod;
   }
 
@@ -203,6 +255,18 @@ export class ModulesService {
     this.prisma.memDb.modules.push(newModule);
     this.recordAudit('MODULE_REGISTERED', `Module ${newModule.id}`, 'SUCCESS', { actor, version: newModule.version });
     this.socGateway.broadcastModuleStateChange(newModule);
+
+    // Publish to Decoupled Event Bus
+    this.eventBus.publishLifecycle(
+      new ModuleLifecycleEvent({
+        moduleId: newModule.id,
+        moduleDisplayName: newModule.displayName,
+        action: 'REGISTERED',
+        currentStatus: newModule.status,
+        actor,
+      }),
+    );
+
     return newModule;
   }
 

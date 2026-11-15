@@ -58,6 +58,27 @@ interface ApiService {
     @POST("devices")
     suspend fun registerDevice(@Body request: RegisterDeviceRequest): Response<DeviceDto>
 
+    @GET("devices/{id}/command-state")
+    suspend fun getDeviceCommandState(@Path("id") id: String): Response<DeviceCommandState>
+
+    @POST("devices/{id}/heartbeat")
+    suspend fun sendDeviceHeartbeat(
+        @Path("id") id: String,
+        @Body request: DeviceHeartbeatRequest
+    ): Response<DeviceCommandState>
+
+    @POST("devices/{id}/lock")
+    suspend fun lockDevice(
+        @Path("id") id: String,
+        @Body body: Map<String, String> = emptyMap()
+    ): Response<Map<String, Any>>
+
+    @POST("devices/{id}/unlock")
+    suspend fun unlockDevice(@Path("id") id: String): Response<Map<String, Any>>
+
+    @POST("devices/{id}/scan")
+    suspend fun triggerRemoteScan(@Path("id") id: String): Response<ScanResultResponse>
+
     // --- Threat Intelligence ---
     @GET("threat-intelligence/indicators")
     suspend fun getThreatIndicators(): Response<List<ThreatIndicatorDto>>

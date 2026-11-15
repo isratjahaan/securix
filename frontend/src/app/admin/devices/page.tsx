@@ -25,6 +25,8 @@ export default function DevicesPage() {
 
   useEffect(() => {
     loadDevices();
+    const interval = setInterval(loadDevices, 3000);
+    return () => clearInterval(interval);
   }, [search]);
 
   const viewDevice = async (id: string) => {
@@ -170,13 +172,43 @@ export default function DevicesPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-slate-700/60">
-              <button
-                onClick={() => setDeregisterOpen(true)}
-                className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 text-xs font-semibold"
-              >
-                Authorized Deregistration
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-slate-700/60">
+              <div className="flex items-center gap-2">
+                {selectedDevice.isLocked || selectedDevice.status === 'STOLEN_LOCKED' ? (
+                  <button
+                    onClick={async () => {
+                      await api.post(`/devices/${selectedDevice.id}/unlock`, {});
+                      alert('Device restored and unlocked successfully');
+                      loadDevices();
+                      setDetailOpen(false);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs"
+                  >
+                    Unlock & Restore Device
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Emergency Lock: Report ${selectedDevice.deviceName} as STOLEN?`)) return;
+                      await api.post(`/devices/${selectedDevice.id}/lock`, {
+                        reason: 'Reported stolen - locked by Super Admin'
+                      });
+                      alert('Emergency Anti-Theft Lockout dispatched to phone!');
+                      loadDevices();
+                      setDetailOpen(false);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                  >
+                    🚨 Report Stolen & Lock
+                  </button>
+                )}
+                <button
+                  onClick={() => setDeregisterOpen(true)}
+                  className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 text-xs font-semibold"
+                >
+                  Deregister
+                </button>
+              </div>
               <button
                 onClick={() => setDetailOpen(false)}
                 className="px-4 py-2 rounded-lg bg-navy-900 hover:bg-navy-700 text-slate-300 text-xs font-medium"

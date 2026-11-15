@@ -46,6 +46,7 @@ data class UserDto(
 data class KpiResponse(
     @SerializedName("totalUsers") val totalUsers: Int = 0,
     @SerializedName("activeUsers") val activeUsers: Int = 0,
+    @SerializedName("totalDevices") val totalDevices: Int = 0,
     @SerializedName("registeredDevices") val registeredDevices: Int = 0,
     @SerializedName("onlineDevices") val onlineDevices: Int = 0,
     @SerializedName("totalModules") val totalModules: Int = 12,
@@ -59,7 +60,10 @@ data class KpiResponse(
     @SerializedName("failedBackupJobs") val failedBackupJobs: Int = 0,
     @SerializedName("postureScore") val postureScore: Int = 92,
     @SerializedName("postureGrade") val postureGrade: String = "A"
-)
+) {
+    val displayTotalDevices: Int
+        get() = if (totalDevices > 0) totalDevices else registeredDevices
+}
 
 data class PostureResponse(
     @SerializedName("score") val score: Int,
@@ -192,4 +196,31 @@ data class SystemHealthDto(
     @SerializedName("apiLatencyMs") val apiLatencyMs: Int = 12,
     @SerializedName("memoryUsagePercent") val memoryUsagePercent: Int = 42,
     @SerializedName("cpuUsagePercent") val cpuUsagePercent: Int = 18
+)
+
+// --- Remote Device Management & Anti-Theft ---
+data class DeviceCommandState(
+    @SerializedName("deviceId") val deviceId: String? = null,
+    @SerializedName("isLocked") val isLocked: Boolean = false,
+    @SerializedName("status") val status: String = "ONLINE",
+    @SerializedName("sirenActive") val sirenActive: Boolean = false,
+    @SerializedName("wipeRequested") val wipeRequested: Boolean = false,
+    @SerializedName("lockReason") val lockReason: String? = null,
+    @SerializedName("lastSyncAt") val lastSyncAt: String? = null
+)
+
+data class DeviceHeartbeatRequest(
+    @SerializedName("deviceId") val deviceId: String,
+    @SerializedName("deviceName") val deviceName: String,
+    @SerializedName("model") val model: String,
+    @SerializedName("osVersion") val osVersion: String,
+    @SerializedName("ipAddress") val ipAddress: String,
+    @SerializedName("batteryLevel") val batteryLevel: Int = 95
+)
+
+data class ScanResultResponse(
+    @SerializedName("success") val success: Boolean = true,
+    @SerializedName("postureScore") val postureScore: Int = 98,
+    @SerializedName("status") val status: String = "COMPLIANT",
+    @SerializedName("message") val message: String = ""
 )

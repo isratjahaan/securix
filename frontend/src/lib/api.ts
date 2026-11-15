@@ -1,6 +1,6 @@
 /**
  * SIS CYBER FORTRESS API Client
- * Enterprise-grade fetch wrapper with token management and type safety.
+ * Enterprise-grade fetch wrapper with token management, user/admin session routing, and type safety.
  */
 
 const API_BASE = '/api';
@@ -16,7 +16,15 @@ export class ApiError extends Error {
 }
 
 async function request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('sis_auth_token') : null;
+  const isBrowser = typeof window !== 'undefined';
+  const isAdminPath = isBrowser && window.location.pathname.startsWith('/admin');
+
+  // Use appropriate token depending on route context (admin vs user)
+  const token = isBrowser
+    ? isAdminPath
+      ? localStorage.getItem('sis_auth_token') || localStorage.getItem('sis_user_token')
+      : localStorage.getItem('sis_user_token') || localStorage.getItem('sis_auth_token')
+    : null;
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -35,10 +43,16 @@ async function request<T = any>(endpoint: string, options: RequestInit = {}): Pr
       headers,
     });
 
-    if (res.status === 401 && typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-      localStorage.removeItem('sis_auth_token');
-      localStorage.removeItem('sis_admin_user');
-      window.location.href = '/admin/login';
+    if (res.status === 401 && isBrowser && !window.location.pathname.includes('/login')) {
+      if (isAdminPath) {
+        localStorage.removeItem('sis_auth_token');
+        localStorage.removeItem('sis_admin_user');
+        window.location.href = '/admin/login';
+      } else {
+        localStorage.removeItem('sis_user_token');
+        localStorage.removeItem('sis_user');
+        window.location.href = '/login';
+      }
       throw new ApiError('Unauthorized session', 401);
     }
 
